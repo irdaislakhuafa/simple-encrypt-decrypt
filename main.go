@@ -29,7 +29,8 @@ func main() {
 	case "encrypt":
 		encText, err := EncryptAES256GCM([]byte(inputText), []byte(key))
 		if err != nil {
-			panic(err)
+			fmt.Println("Error: Cannot encrypt text => " + err.Error())
+			os.Exit(1)
 		}
 
 		fmt.Println("Encrypted:", string(encText))
@@ -37,12 +38,13 @@ func main() {
 	case "decrypt":
 		decText, err := DecryptAES256GCM([]byte(inputText), []byte(key))
 		if err != nil {
-			panic(err)
+			fmt.Println("Error: Cannot decrypt text => " + err.Error())
+			os.Exit(1)
 		}
 
 		fmt.Println("Decrypted:", string(decText))
 	default:
-		panic("error: invalid flags!")
+		fmt.Println("Error: Invalid flags!")
 	}
 }
 
