@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 )
 
 func main() {
@@ -19,15 +20,18 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	mode := flag.String("mode", "encrypt", "Put mode here, available mode (encrypt/decrypt)")
+	inputText := flag.String("value", "", "Put value you want to by encrypted here")
 	flag.Parse()
 
-	fmt.Printf("Input Text: ")
-	scanner.Scan()
-	inputText := scanner.Text()
+	if *inputText == "" {
+		fmt.Printf("Input Text: ")
+		scanner.Scan()
+		*inputText = scanner.Text()
+	}
 
 	switch *mode {
 	case "encrypt":
-		encText, err := EncryptAES256GCM([]byte(inputText), []byte(key))
+		encText, err := EncryptAES256GCM([]byte(*inputText), []byte(key))
 		if err != nil {
 			fmt.Println("Error: Cannot encrypt text => " + err.Error())
 			os.Exit(1)
@@ -36,13 +40,43 @@ func main() {
 		fmt.Println("Encrypted:", string(encText))
 
 	case "decrypt":
-		decText, err := DecryptAES256GCM([]byte(inputText), []byte(key))
+		decText, err := DecryptAES256GCM([]byte(*inputText), []byte(key))
 		if err != nil {
 			fmt.Println("Error: Cannot decrypt text => " + err.Error())
 			os.Exit(1)
 		}
 
 		fmt.Println("Decrypted:", string(decText))
+	case "createKey":
+		keySize, err := strconv.Atoi(*inputText)
+		if err != nil {
+			fmt.Println("Error: Cannot create key => " + err.Error())
+			os.Exit(1)
+		}
+
+		listAllowedKeySize := []int{128, 192, 256}
+		contains := func(value int, slices ...int) bool {
+			for _, allowedKeySize := range listAllowedKeySize {
+				if value == allowedKeySize {
+					return true
+				}
+			}
+
+			return false
+		}
+
+		if !contains(keySize, listAllowedKeySize...) {
+			fmt.Printf("Error: Allowed key size is => %+v\n", listAllowedKeySize)
+			os.Exit(1)
+		}
+
+		key := make([]byte, keySize)
+		if _, err := rand.Read(key); err != nil {
+			fmt.Println("Error: Cannot generate AES key => " + err.Error())
+			os.Exit(1)
+		}
+
+		fmt.Println(base64.StdEncoding.EncodeToString(key))
 	default:
 		fmt.Println("Error: Invalid flags!")
 	}
